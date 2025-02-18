@@ -1,0 +1,29 @@
+### Get index.html
+# GET http://127.0.0.1:5000/
+
+### Add Todo
+POST http://127.0.0.1:5000/api/todo/create
+Content-Type: application/json
+
+{
+    "todo": "Buy groceries",
+    "done": false
+}
+
+### Get All Todos
+GET http://127.0.0.1:5000/api/todo
+
+### Get Todo by ID
+GET http://127.0.0.1:5000/api/todo/1
+
+### Update Todo
+PUT http://127.0.0.1:5000/api/todo/update/1
+Content-Type: application/json
+
+{
+    "todo": "Buy groceries and cook dinner (updated)",
+    "done": true
+}
+
+### Delete Todo
+DELETE http://127.0.0.1:5000/api/todo/delete/1

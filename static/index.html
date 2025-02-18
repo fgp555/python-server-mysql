@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
+    <title>Todo List</title>
+    <style>
+      section {
+        max-width: 30rem;
+        margin: auto;
+      }
+      article {
+        box-shadow: inset -2px -2px 5px 0 #aaa1;
+        border: 1px solid #fff1;
+        color: #a00;
+      }
+      li {
+        margin: 0.5em;
+        display: flex;
+        align-items: center;
+      }
+      .button_delete {
+        margin-left: 10px;
+        padding: 5px;
+        font-size: 0.8em;
+        background-color: #a00;
+        color: #fff;
+        border: 1px solid #fff1;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+      .button_delete:hover {
+        background-color: #f00;
+      }
+      .done {
+        text-decoration: line-through;
+        color: grey;
+      }
+      .title {
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1 class="title">Todo List</h1>
+    </header>
+    <main class="container">
+      <section>
+        <article>
+          <h2>Add Todo</h2>
+          <input type="text" id="todo-input" placeholder="Enter todo" />
+          <label for="done-input">Done</label>
+          <input type="checkbox" id="done-input" />
+          <button onclick="addTodo()">Add</button>
+        </article>
+        <article>
+          <h1>List</h1>
+          <ul id="todos-list"></ul>
+        </article>
+      </section>
+    </main>
+
+    <footer></footer>
+    <script>
+      const randomTasks = [
+        "Complete the project",
+        "Read a book",
+        "Go for a walk",
+        "Learn a new language",
+        "Cook a new recipe",
+        "Call a friend",
+        "Exercise for 30 minutes",
+        "Organize your desk",
+        "Write in your journal",
+        "Take a 15-minute break",
+      ];
+
+      async function fetchTodos() {
+        const response = await fetch("/api/todo");
+        const todos = await response.json();
+        const todosList = document.getElementById("todos-list");
+        todosList.innerHTML = "";
+
+        todos.forEach((todo) => {
+          const li = document.createElement("li");
+
+          // Create checkbox for done status
+          const doneCheckbox = document.createElement("input");
+          doneCheckbox.type = "checkbox";
+          doneCheckbox.checked = todo.done;
+
+          // Add event listener to toggle done status
+          doneCheckbox.addEventListener("change", async () => {
+            const newDoneStatus = doneCheckbox.checked;
+            const updateResponse = await fetch(`/api/todo/update/${todo.id}`, {
+              method: "PUT",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ todo: todo.todo, done: newDoneStatus }),
+            });
+
+            if (updateResponse.ok) {
+              todo.done = newDoneStatus;
+              // Toggle the done class based on the checkbox status
+              todoText.classList.toggle("done", newDoneStatus);
+            }
+          });
+
+          // Create the todo text element
+          const todoText = document.createElement("span");
+          todoText.textContent = ` ${todo.todo}`;
+          if (todo.done) {
+            todoText.classList.add("done"); // Add the "done" class if the todo is marked as done
+          }
+
+          // Create delete button
+          const deleteButton = document.createElement("span");
+          deleteButton.textContent = "Delete";
+          deleteButton.classList.add("button_delete");
+          deleteButton.addEventListener("click", async () => {
+            const deleteResponse = await fetch(`/api/todo/delete/${todo.id}`, {
+              method: "DELETE",
+            });
+
+            if (deleteResponse.ok) {
+              fetchTodos(); // Re-fetch the todos list after deletion
+            }
+          });
+
+          // Append the checkbox, todo text, and delete button to the list item
+          li.appendChild(doneCheckbox);
+          li.appendChild(todoText);
+          li.appendChild(deleteButton);
+
+          // Append the list item to the ul
+          todosList.appendChild(li);
+        });
+      }
+
+      async function addTodo() {
+        const todo = document.getElementById("todo-input").value;
+        const done = document.getElementById("done-input").checked;
+        const response = await fetch("/api/todo/create", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ todo, done }),
+        });
+        if (response.ok) {
+          fetchTodos(); // Re-fetch the todos list after adding
+          document.getElementById("todo-input").value = "";
+          document.getElementById("done-input").checked = false;
+          addRandomTask();
+        }
+      }
+
+      function addRandomTask() {
+        const randomIndex = Math.floor(Math.random() * randomTasks.length);
+        const randomTask = randomTasks[randomIndex];
+        document.getElementById("todo-input").value = randomTask;
+      }
+      addRandomTask();
+
+      window.onload = fetchTodos; // Fetch todos when the page loads
+    </script>
+  </body>
+</html>
